@@ -7,6 +7,10 @@ const { DataTypes } = require('sequelize');
 const app = express();
 app.use(express.json());
 
+if (!sequelize) {
+    throw new Error('Database connection not initialized');
+}
+
 const Person = sequelize.define('User', {
     id: {
         type: DataTypes.INTEGER,
@@ -83,12 +87,14 @@ app.get('/users/:id', async (req, res) => {
 // UPDATE - PUT
 app.put('/users/:id', async (req, res) => {
     try {
-        const user = await Person.findByPk(req.params.id);
-        if (user) {
-            await user.update(req.body);
+        const [updated] = await Person.update(req.body, {
+            where: { id: req.params.id }
+        });
+        if (updated) {
+            const updatedUser = await Person.findByPk(req.params.id);
             res.json({
                 message: 'Usuário atualizado com sucesso!',
-                data: user
+                data: updatedUser
             });
         } else {
             res.status(404).json({ message: 'Usuário não encontrado' });
@@ -104,9 +110,10 @@ app.put('/users/:id', async (req, res) => {
 // DELETE
 app.delete('/users/:id', async (req, res) => {
     try {
-        const user = await Person.findByPk(req.params.id);
-        if (user) {
-            await user.destroy();
+        const deleted = await Person.destroy({
+            where: { id: req.params.id }
+        });
+        if (deleted) {
             res.status(200).json({
                 message: 'Usuário deletado com sucesso!'
             });
@@ -139,35 +146,37 @@ async function importCSV() {
                 })
                 .on('end', async () => {
                     try {
-                        for (const row of rows) {
-                            await Person.upsert(row, {
-                                where: { id: row.id }
-                            });
-                        }
+                        await Person.bulkCreate(rows, {
+                            updateOnDuplicate: ['nome', 'nota']
+                        });
                         console.log('CSV importado com sucesso!');
                         resolve();
                     } catch (error) {
                         console.error('Erro ao inserir dados:', error);
-                        reject(error);
+                        reject(new Error(error.message));
                     }
                 })
                 .on('error', (error) => {
                     console.error('Erro na leitura do CSV:', error);
-                    reject(error);
+                    reject(new Error(error.message));
                 });
         });
     } catch (error) {
         console.error('Erro na conexão:', error);
-        throw error;
+        throw new Error(error.message);
     }
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    try {
-        await importCSV();
-    } catch (error) {
-        console.error('Erro ao importar CSV:', error);
-    }
-});
+module.exports = { app, Person, importCSV };
+
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, async () => {
+        console.log(`Servidor rodando na porta ${PORT}`);
+        try {
+            await importCSV();
+        } catch (error) {
+            console.error('Erro ao importar CSV:', error);
+        }
+    });
+}

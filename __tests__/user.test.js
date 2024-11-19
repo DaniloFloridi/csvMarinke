@@ -1,4 +1,5 @@
 const request = require('supertest');
+const path = require('path');
 const { app, Person, sequelize } = require('../index.js');
 
 beforeAll(async () => {
@@ -14,6 +15,7 @@ afterAll(async () => {
 });
 
 describe('Testando os endpoints de User', () => {
+
     it('POST /users - Deve criar um novo usuário', async () => {
         const response = await request(app).post('/users').send({
             id: 44,
@@ -50,4 +52,13 @@ describe('Testando os endpoints de User', () => {
         expect(response.status).toBe(200);
         expect(response.body.message).toBe('Usuário deletado com sucesso!');
     });
+
+    it('POST /import-csv - Deve importar o arquivo CSV', async () => {
+        const response = await request(app).post('/import-csv').send({
+            file: path.join(__dirname, '..', 'data', 'dados.csv')
+        });
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe('CSV importado com sucesso!');
+    });
+
 });

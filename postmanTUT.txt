@@ -1,0 +1,32 @@
+POSTMAN ENDPOINTS:
+
+1. CREATE - POST
+URL: http://localhost:3000/users
+Method: POST
+Body (raw JSON):
+{
+    "id": 1,
+    "nome": "Nome do Usuário",
+    "nota": 10
+}
+
+2. READ ALL - GET
+URL: http://localhost:3000/users
+Method: GET
+
+3. READ ONE - GET
+URL: http://localhost:3000/users/1
+Method: GET
+
+4. UPDATE - PUT
+URL: http://localhost:3000/users/1
+Method: PUT
+Body (raw JSON):
+{
+    "nome": "Novo Nome",
+    "nota": 9
+}
+
+5. DELETE
+URL: http://localhost:3000/users/1
+Method: DELETE
